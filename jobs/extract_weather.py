@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError
 from datetime import datetime, timezone
 
-from config.settings import MONGO_URI, API_KEY, CITY_ID
+from weather_pipeline.config.settings import MONGO_URI, API_KEY, CITY_ID
 
 mongo = MongoClient(MONGO_URI)
 weather_collection = mongo.weather_raw.raw_weather
@@ -46,6 +46,6 @@ def save_raw(data, collection):
     except DuplicateKeyError:
         print("Error duplicate collection")
 
-
-raw_data = extract()
-save_raw(raw_data, weather_collection)
+def main():
+    raw_data = extract()
+    save_raw(raw_data, weather_collection)

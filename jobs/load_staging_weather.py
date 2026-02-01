@@ -4,8 +4,8 @@ from pymongo import MongoClient
 from pytz import utc
 from datetime import datetime
 
-from config.settings import POSTGRESQL_URI
-from config.settings import MONGO_URI
+from weather_pipeline.config.settings import POSTGRESQL_URI
+from weather_pipeline.config.settings import MONGO_URI
 
 def get_last_loaded_ts(pg_conn) -> datetime:
     with pg_conn.cursor() as cursor:
@@ -121,7 +121,3 @@ def main():
     load_to_postgresql(pg_conn, staging_data)
     pg_conn.close()
     mongo_client.close()
-
-main()
-
-    

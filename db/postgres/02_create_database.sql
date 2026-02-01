@@ -1,0 +1,1 @@
+CREATE DATABASE weather OWNER weather_user;

@@ -1,0 +1,1 @@
+CREATE USER weather_user WITH PASSWORD :'password';
