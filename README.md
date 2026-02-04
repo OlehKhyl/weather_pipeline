@@ -58,7 +58,8 @@ weather_pipeline/
 │       │   ├── extract_weather.py
 │       │   └── load_staging_weather.py
 │       ├── config/
-│       │   └── settings.py
+│       │   ├── settings.py
+│       │   └── cities.py
 │       └── db/
 │           ├── mongo/
 │           │   └── create_indexes.py
