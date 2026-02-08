@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 from weather_pipeline.jobs.extract_weather import main as extract_weather_main
 from weather_pipeline.jobs.load_staging_weather import main as load_staging_weather_main
+from weather_pipeline.jobs.data_quality.data_quality_check_task import main as data_quality_check_task
 
 default_args = {
     'owner': 'airflow',
@@ -33,4 +34,9 @@ transform_and_load = PythonOperator(
     dag=dag,
 )
 
-extract_weather_task >> transform_and_load
+data_quality_check = PythonOperator(
+    task_id = 'data_quality_check',
+    python_callable = data_quality_check_task,
+    dag=dag,
+)
+extract_weather_task >> transform_and_load >> data_quality_check
