@@ -6,11 +6,14 @@ from datetime import datetime, timezone
 from weather_pipeline.config.settings import MONGO_URI, API_KEY
 from weather_pipeline.config.cities import CITIES
 
-mongo = MongoClient(MONGO_URI)
-weather_collection = mongo.weather_raw.raw_weather
-
 def extract(CITY_ID):
-    response = requests.get(f"https://api.openweathermap.org/data/2.5/weather?id={CITY_ID}&units=metric&appid={API_KEY}")
+    params = {
+        "id": CITY_ID,
+        "units": "metric", 
+        "appid": API_KEY
+    }
+
+    response = requests.get(f"https://api.openweathermap.org/data/2.5/weather", params=params)
 
     if (response.status_code == 200):
 
@@ -48,6 +51,8 @@ def save_raw(data, collection):
         print("Error duplicate collection")
 
 def main():
-    for city in CITIES:
-        raw_data = extract(city["id"])
-        save_raw(raw_data, weather_collection)
+    with MongoClient(MONGO_URI) as mongo:
+        weather_collection = mongo.weather_raw.raw_weather
+        for city in CITIES:
+            raw_data = extract(city["id"])
+            save_raw(raw_data, weather_collection)

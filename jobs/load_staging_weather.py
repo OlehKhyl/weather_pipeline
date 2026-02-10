@@ -98,26 +98,24 @@ def safe_int(value):
     return int(value) if value is not None else None
 
 def main():
-    pg_conn = psycopg2.connect(POSTGRESQL_URI)
-    mongo_client = MongoClient(MONGO_URI)
+    with psycopg2.connect(POSTGRESQL_URI) as pg_conn:
+        with MongoClient(MONGO_URI) as mongo_client:
 
-    since_ts = get_last_loaded_ts(pg_conn)
+            since_ts = get_last_loaded_ts(pg_conn)
 
-    if since_ts is None:
-        since_ts = datetime.fromtimestamp(0, tz=utc)
+            if since_ts is None:
+                since_ts = datetime.fromtimestamp(0, tz=utc)
 
-    
-    raw_data = extract_from_mongo(mongo_client, since_ts)
+            
+            raw_data = extract_from_mongo(mongo_client, since_ts)
 
 
-    staging_data = []
+            staging_data = []
 
-    for document in raw_data:
-        try :
-            staging_data.append(transform(document))
-        except ValueError as e:
-            continue
+            for document in raw_data:
+                try :
+                    staging_data.append(transform(document))
+                except ValueError as e:
+                    continue
 
-    load_to_postgresql(pg_conn, staging_data)
-    pg_conn.close()
-    mongo_client.close()
+            load_to_postgresql(pg_conn, staging_data)

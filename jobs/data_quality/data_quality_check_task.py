@@ -10,24 +10,24 @@ def get_current_dag_start_time(**context):
 
 
 def check_data_uploaded(pg_conn, current_dag_start_time):
-    sql_statement = f"SELECT COUNT(*)\
+    sql_statement = "SELECT COUNT(*)\
                      FROM staging.stg_weather_observations\
-                     WHERE ingested_at >= '{current_dag_start_time}';"
+                     WHERE ingested_at >= %s;"
 
     with pg_conn.cursor() as cursor:
-        cursor.execute(sql_statement)
+        cursor.execute(sql_statement, (current_dag_start_time,))
         number = cursor.fetchone()[0]
         if (number == 0):
             raise ValueError("No data was uploaded since dag start")
 
 
 def check_cities_count(pg_conn, current_dag_start_time):
-    sql_statement = f"SELECT distinct city_id\
+    sql_statement = "SELECT distinct city_id\
                      FROM staging.stg_weather_observations\
-                     WHERE ingested_at >= '{current_dag_start_time}';"
+                     WHERE ingested_at >= %s;"
 
     with pg_conn.cursor()  as cursor:
-        cursor.execute(sql_statement)
+        cursor.execute(sql_statement, (current_dag_start_time,))
         result = set(r[0] for r in cursor.fetchall())
 
         expected = set(c['id'] for c in CITIES)
@@ -37,22 +37,20 @@ def check_cities_count(pg_conn, current_dag_start_time):
 
 
 def check_constraints(pg_conn, current_dag_start_time):
-    sql_statement = f"SELECT COUNT(*) FROM staging.stg_weather_observations WHERE ingested_at >= '{current_dag_start_time}' AND (city_id is null OR observation_ts is null OR source is null);"
+    sql_statement = "SELECT COUNT(*) FROM staging.stg_weather_observations WHERE ingested_at >= %s AND (city_id is null OR observation_ts is null OR source is null);"
 
     with pg_conn.cursor()  as cursor:
-        cursor.execute(sql_statement)
+        cursor.execute(sql_statement, (current_dag_start_time,))
         number = cursor.fetchone()[0]
         if (number != 0):
             raise ValueError("There is data constaints issues in table")
 
 
 def main(**context):
-    pg_conn = psycopg2.connect(POSTGRESQL_URI)
+    with psycopg2.connect(POSTGRESQL_URI) as pg_conn:
 
-    current_dag_start_time = get_current_dag_start_time(**context)
+        current_dag_start_time = get_current_dag_start_time(**context)
 
-    check_data_uploaded(pg_conn,current_dag_start_time)
-    check_cities_count(pg_conn,current_dag_start_time)
-    check_constraints(pg_conn,current_dag_start_time)
-
-    pg_conn.close()
+        check_data_uploaded(pg_conn,current_dag_start_time)
+        check_cities_count(pg_conn,current_dag_start_time)
+        check_constraints(pg_conn,current_dag_start_time)
