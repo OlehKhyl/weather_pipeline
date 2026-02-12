@@ -55,4 +55,7 @@ def main():
         weather_collection = mongo.weather_raw.raw_weather
         for city in CITIES:
             raw_data = extract(city["id"])
+            if raw_data is None:
+                continue
+                
             save_raw(raw_data, weather_collection)
