@@ -2,7 +2,7 @@ import psycopg2
 
 from weather_pipeline.config.settings import POSTGRESQL_URI
 from weather_pipeline.config.cities import CITIES
-from datetime import datetime, timezone
+from datetime import datetime
 from pytz import utc
 
 def get_current_dag_start_time(**context):
