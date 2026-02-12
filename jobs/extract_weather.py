@@ -13,30 +13,27 @@ def extract(CITY_ID):
         "appid": API_KEY
     }
 
-    response = requests.get(f"https://api.openweathermap.org/data/2.5/weather", params=params)
+    response = requests.get(f"https://api.openweathermap.org/data/2.5/weather", params=params, timeout=(5,15))
 
-    if (response.status_code == 200):
+    response.raise_for_status()
 
-        data = response.json()
+    data = response.json()
 
-        city_id = data.get("id", None)
-        city_name = data.get("name", None)
+    city_id = data.get("id", None)
+    city_name = data.get("name", None)
 
-        if city_id is not None:
+    if city_id is not None:
 
-            observation_ts = data.get("dt",None)
-            return {
-                "city_id": city_id,
-                "city_name": city_name,
-                "source": "OWM",
-                "observation_ts":observation_ts,
-                "payload": data
-            }
-        else:
-            print("Error city_id is None")
-
+        observation_ts = data.get("dt",None)
+        return {
+            "city_id": city_id,
+            "city_name": city_name,
+            "source": "OWM",
+            "observation_ts":observation_ts,
+            "payload": data
+        }
     else:
-        print(f"Status not 200, Response: {response.status_code}, {response.reason}")
+        print("Error city_id is None")
 
 
 def save_raw(data, collection):
@@ -57,5 +54,5 @@ def main():
             raw_data = extract(city["id"])
             if raw_data is None:
                 continue
-                
+
             save_raw(raw_data, weather_collection)
