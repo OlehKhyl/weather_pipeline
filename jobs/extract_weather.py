@@ -33,7 +33,7 @@ def extract(CITY_ID):
             "payload": data
         }
     else:
-        print("Error city_id is None")
+        raise ValueError("Error city_id is None - invalid configuration or mapping error")
 
 
 def save_raw(data, collection):
