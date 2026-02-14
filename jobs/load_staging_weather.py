@@ -1,4 +1,5 @@
 import psycopg2
+import logging
 from psycopg2 import extras
 from pymongo import MongoClient
 from pytz import utc
@@ -6,6 +7,8 @@ from datetime import datetime
 
 from weather_pipeline.config.settings import POSTGRESQL_URI
 from weather_pipeline.config.settings import MONGO_URI
+
+logger = logging.getLogger(__name__)
 
 def get_last_loaded_ts(pg_conn) -> datetime:
     with pg_conn.cursor() as cursor:
@@ -106,16 +109,30 @@ def main():
             if since_ts is None:
                 since_ts = datetime.fromtimestamp(0, tz=utc)
 
-            
-            raw_data = extract_from_mongo(mongo_client, since_ts)
+            logger.info("Starting load to staging")
 
+            logger.info("Loading records with observation_ts > %s", since_ts)
+            raw_data = list(extract_from_mongo(mongo_client, since_ts))
+
+            logger.info("Extracted %s records from MongoDB with observation_ts > %s", len(raw_data), since_ts)
 
             staging_data = []
+
+            reject_count = 0
 
             for document in raw_data:
                 try :
                     staging_data.append(transform(document))
                 except ValueError as e:
+                    reject_count += 1
+                    logger.warning("Error transforming document: %s", e)
                     continue
 
+            if reject_count > 0:        
+                logger.warning("Rejected records during transform: %s", reject_count)
+
+            logger.info("Inserting %s records into staging", len(staging_data))
+
             load_to_postgresql(pg_conn, staging_data)
+
+            logger.info("Load to staging completed")

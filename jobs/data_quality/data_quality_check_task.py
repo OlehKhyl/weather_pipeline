@@ -1,9 +1,11 @@
 import psycopg2
-
+import logging
 from weather_pipeline.config.settings import POSTGRESQL_URI
 from weather_pipeline.config.cities import CITIES
 from datetime import datetime
 from pytz import utc
+
+logger = logging.getLogger(__name__)
 
 def get_current_dag_start_time(**context):
     return context.get("data_interval_start").astimezone(utc)
@@ -19,6 +21,8 @@ def check_data_uploaded(pg_conn, current_dag_start_time):
         number = cursor.fetchone()[0]
         if (number == 0):
             raise ValueError("No data was uploaded since dag start")
+        else:
+            logger.info("Rows uploaded since DAG start: %s", number)
 
 
 def check_cities_count(pg_conn, current_dag_start_time):
@@ -33,7 +37,7 @@ def check_cities_count(pg_conn, current_dag_start_time):
         expected = set(c['id'] for c in CITIES)
 
         if result != expected:
-            raise ValueError("city_id not match CITIES dict in config/cities")
+            raise ValueError("city_id not match CITIES dict in config/cities. expected: %s, actual: %s", expected, result)
 
 
 def check_constraints(pg_conn, current_dag_start_time):
@@ -43,11 +47,13 @@ def check_constraints(pg_conn, current_dag_start_time):
         cursor.execute(sql_statement, (current_dag_start_time,))
         number = cursor.fetchone()[0]
         if (number != 0):
-            raise ValueError("There is data constaints issues in table")
+            raise ValueError("Constraint violations detected: %s rows", number)
 
 
 def main(**context):
     with psycopg2.connect(POSTGRESQL_URI) as pg_conn:
+
+        logger.info("Starting data quality checks")
 
         current_dag_start_time = get_current_dag_start_time(**context)
 
